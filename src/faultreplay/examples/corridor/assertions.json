@@ -1,0 +1,11 @@
+{
+  "target_assertion_id": "corridor.turn_on_once",
+  "assertions": [
+    {
+      "id": "corridor.turn_on_once",
+      "output_type": "light.turn_on",
+      "window_ms": [0, 500],
+      "max_count": 1
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{"id":"temp-01","offset_ms":0,"type":"sensor.temperature","payload":{"value":21.2}}
+{"id":"humidity-01","offset_ms":20,"type":"sensor.humidity","payload":{"value":44}}
+{"id":"motion-01","offset_ms":50,"type":"sensor.motion","payload":{"active":true}}
+{"id":"history-on-01","offset_ms":50,"type":"light.turn_on","payload":{"light":"corridor"},"direction":"output"}
+{"id":"temp-02","offset_ms":80,"type":"sensor.temperature","payload":{"value":21.3}}
+{"id":"humidity-02","offset_ms":110,"type":"sensor.humidity","payload":{"value":45}}
+{"id":"temp-03","offset_ms":130,"type":"sensor.temperature","payload":{"value":21.4}}
+{"id":"motion-02","offset_ms":150,"type":"sensor.motion","payload":{"active":false}}
+{"id":"humidity-03","offset_ms":165,"type":"sensor.humidity","payload":{"value":44}}
+{"id":"temp-04","offset_ms":200,"type":"sensor.temperature","payload":{"value":21.3}}
+{"id":"humidity-04","offset_ms":230,"type":"sensor.humidity","payload":{"value":46}}
+{"id":"motion-03","offset_ms":250,"type":"sensor.motion","payload":{"active":true}}
+{"id":"history-on-02","offset_ms":250,"type":"light.turn_on","payload":{"light":"corridor"},"direction":"output"}
+{"id":"temp-05","offset_ms":350,"type":"sensor.temperature","payload":{"value":21.2}}
+{"id":"humidity-05","offset_ms":490,"type":"sensor.humidity","payload":{"value":45}}
