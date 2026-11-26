@@ -46,7 +46,9 @@ def test_exported_pytest_reproduces_same_assertion_on_both_logs(tmp_path, capsys
     assert "test_target_assertion[original]" in buggy.stdout
     assert "test_target_assertion[reduced]" in buggy.stdout
     expected = "AssertionError: corridor.turn_on_once | light.turn_on [0, 500) ms <= 1. Observed 2 at [50, 250] ms."
-    assert buggy.stdout.count(expected) == 2, buggy.stdout
+    # 只数断言详情行：pytest 会按终端宽度截断 `FAILED ...` 摘要行，摘要里的次数随平台变化。
+    details = [line for line in buggy.stdout.splitlines() if line.startswith("E ") and expected in line]
+    assert len(details) == 2, buggy.stdout
 
 
 def test_invalid_last_input_is_reported_before_any_replay(tmp_path, capsys):
