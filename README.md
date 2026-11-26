@@ -1,13 +1,15 @@
 # FaultReplay Agent v0.1
 
-FaultReplay Agent 反复回放事件日志，缩减出仍能触发同一断言的输入序列，并导出 pytest 回归测试。
+FaultReplay Agent replays an event log against a target assertion, shrinks it to the smallest input sequence that still trips the same failure, and exports a pytest regression test for it.
+
+[简体中文](README.zh-CN.md) · MIT
 
 ```sh
 python -m pip install -e ".[test]"
 faultreplay demo
 ```
 
-需要 Python 3.11 或更新版本。安装完成后，演示和测试均可离线运行，无需 API Key。
+Python 3.11 or newer. Once installed, both the demo and the tests run offline — no API key needed.
 
 ```text
 Original log: 15 records (13 replay inputs)
@@ -21,32 +23,32 @@ Verify exported regression: python -m pytest -q "faultreplay-output/test_regress
 Reproduce on failing simulator: python -m pytest -q "faultreplay-output/test_regression.py" -p faultreplay.pytest_plugin --faultreplay-simulator faultreplay.corridor:BUGGY
 ```
 
-## 验证走廊灯回归测试
+## Verify the corridor light regression
 
-导出的 `test_regression.py` 用相同的断言分别测试 `original.jsonl` 和 `reduced.jsonl`。断言规定在 `[0, 500)` 毫秒内最多发出一次 `light.turn_on`。
+The exported `test_regression.py` runs the same assertion against `original.jsonl` and `reduced.jsonl`: at most one `light.turn_on` within `[0, 500)` ms.
 
 ```sh
 python -m pytest -q "faultreplay-output/test_regression.py"
 python -m pytest -q "faultreplay-output/test_regression.py" -p faultreplay.pytest_plugin --faultreplay-simulator faultreplay.corridor:BUGGY
 ```
 
-| 模拟器 | 原始日志与缩减日志的开灯时间 | pytest 实际结果 |
+| Simulator | Light-on times, original and reduced logs | pytest result |
 | --- | --- | --- |
-| 修复版（导出测试的默认值） | 均为 50 ms | `2 passed` |
-| 故障版 | 均为 50、250 ms | `2 failed`，两例均违反 `corridor.turn_on_once` |
+| Fixed (the exported test's default) | 50 ms in both | `2 passed` |
+| Buggy | 50 and 250 ms in both | `2 failed`, both violating `corridor.turn_on_once` |
 
-将生成的测试移入项目时，把 `original.jsonl`、`reduced.jsonl`、`initial_state.json` 和 `assertions.json` 一起复制到测试文件所在目录，并安装 FaultReplay Agent 和相应的模拟器适配器。源示例位于 `src/faultreplay/examples/corridor/`。
+To move the generated test into your own project, copy `original.jsonl`, `reduced.jsonl`, `initial_state.json` and `assertions.json` next to the test file, and install FaultReplay Agent plus the matching simulator adapter. The source example lives in `src/faultreplay/examples/corridor/`.
 
-## 接入自己的事件日志
+## Bring your own event log
 
-JSONL 每行包含唯一的 `id`、非负整数 `offset_ms`、事件 `type` 和对象 `payload`。按 `offset_ms` 升序写入日志，同一时间戳的事件按文件顺序执行。`direction` 默认为 `input`。用 `"direction":"output"` 标记历史输出，供报告展示。每轮回放从初始状态的副本和 0 毫秒开始，按事件的原始偏移更新虚拟时钟并注入输入事件。
+Each JSONL line carries a unique `id`, a non-negative integer `offset_ms`, an event `type` and an object `payload`. Write the log in ascending `offset_ms`; events sharing a timestamp run in file order. `direction` defaults to `input`. Mark past outputs with `"direction":"output"` so the report can show them. Every replay starts from a copy of the initial state at 0 ms, advances a virtual clock to each event's original offset and injects the input.
 
 ```jsonl
 {"id":"motion-01","offset_ms":50,"type":"sensor.motion","payload":{"active":true}}
 {"id":"history-on-01","offset_ms":50,"type":"light.turn_on","payload":{"light":"corridor"},"direction":"output"}
 ```
 
-初始状态是 JSON 对象，例如 `{"motion": false}`。断言文件包含一个或多个计数断言，并用 `target_assertion_id` 选定需要复现的故障。`window_ms` 包含起点，排除终点。
+The initial state is a JSON object such as `{"motion": false}`. The assertion file holds one or more count assertions and names the failure to reproduce with `target_assertion_id`. `window_ms` includes its start and excludes its end.
 
 ```json
 {
@@ -57,27 +59,31 @@ JSONL 每行包含唯一的 `id`、非负整数 `offset_ms`、事件 `type` 和�
 }
 ```
 
-在可导入的 Python 模块中定义 `faultreplay.replay.Adapter` 实例。`Adapter` 的 `create(initial_state)` 每轮创建一个模拟器。模拟器实现 `handle(event, clock)`，用 `clock.now_ms` 读取当前虚拟时间，用 `clock.emit(output_type, payload)` 发出当前时刻的输出。可选的 `validate_initial` 和 `validate_event` 在首次回放前校验模拟器的输入。
+Define an instance of `faultreplay.replay.Adapter` in an importable Python module. Its `create(initial_state)` builds one simulator per replay. The simulator implements `handle(event, clock)`, reads the virtual time from `clock.now_ms` and emits output for that instant with `clock.emit(output_type, payload)`. The optional `validate_initial` and `validate_event` check your input before the first replay.
 
 ```sh
 faultreplay reduce --events events.jsonl --initial-state initial_state.json --assertions assertions.json --simulator my_app.replay:BUGGY --regression-simulator my_app.replay:FIXED --max-replays 100 --output replay-result
 ```
 
-`--regression-simulator` 指定导出测试默认使用的适配器，省略时沿用 `--simulator`。CLI 退出码 `0` 表示导出了回归测试，`1` 表示本次运行只导出诊断报告，`2` 表示参数、输入或写入错误。
+`--regression-simulator` selects the adapter the exported test uses by default; without it, `--simulator` is reused. The CLI exits `0` when it exported a regression test, `1` when this run only produced a diagnostic report, and `2` on bad arguments, bad input or a write error.
 
-## 模型与回放预算
+## Models and replay budget
 
-添加 `--model my_app.model:suggest` 可启用模型建议。`suggest(system_prompt, message_json)` 接收运行时提示词，以及目标断言、当前事件的 ID 与摘要、当前观测和最近的回放结果。它返回形如 `{"remove_ids":["temp-01","temp-02"]}` 的 JSON 文本。程序校验建议并自行执行回放。模型加载失败、调用异常或建议无效时，使用确定性策略依次尝试事件类别、连续区段和逐条删除。
+Add `--model my_app.model:suggest` to let a model propose removals. `suggest(system_prompt, message_json)` receives the runtime prompt along with the target assertion, the current event ids and summaries, the current observation and the latest replay results. It returns JSON text shaped like `{"remove_ids":["temp-01","temp-02"]}`. The program validates the suggestion and runs the replays itself. If the model cannot be loaded, raises, or suggests something invalid, a deterministic strategy takes over and tries event categories, contiguous spans and single-event deletions in turn.
 
-`--max-replays` 默认是 100，包含基线、候选和最终复核的实际运行次数。基线和每个候选各运行两次，并比较输出事件的时间、类型与内容。候选必须正常结束并稳定违反目标断言。异常或观测不一致的候选记为无法判定。基线无法稳定复现时，报告原始观测并结束。每轮删减前预留两次回放，用于复核最终选中的序列。
+`--max-replays` defaults to 100 and counts every actual replay: baseline, candidates and final verification. The baseline and each candidate run twice, comparing timing, type and content of the emitted events. A candidate must finish cleanly and violate the target assertion consistently; one that raises or disagrees between runs is marked undetermined. If the baseline does not reproduce reliably, the report records the original observation and stops. Two replays are reserved before each reduction round to re-verify the sequence finally chosen.
 
-预算不足时，`report.md` 列出已验证的最短序列和尚待检查的删除批次。报告还会标出回放无法判定的批次。只有对当前序列的每一种单事件删除都得到稳定结果且目标断言均未失败，报告才会显示 `Single-deletion verified: yes`（逐条删除已验证）。
+When the budget runs out, `report.md` lists the shortest verified sequence and the deletion batches still unchecked, and flags any batch whose replays were undetermined. The report only says `Single-deletion verified: yes` when every single-event deletion of the current sequence produced a stable result without the target assertion failing.
 
-## 开发验证
+## Development
 
 ```sh
 python -m pytest -q
 faultreplay demo --max-replays 8 --output faultreplay-output/budget-8
 ```
 
-GitHub Actions 在 Python 3.11 和 3.12 上运行测试、离线演示和生成的回归测试。测试套件用模拟模型验证建议、回放反馈和离线回退，也验证导出的测试会在故障版和修复版上分别得到预期结果。
+GitHub Actions runs the tests, the offline demo and the generated regression test on Python 3.11 and 3.12. The suite uses a stub model to exercise suggestions, replay feedback and the offline fallback, and it verifies that the exported test fails on the buggy simulator and passes on the fixed one.
+
+## License
+
+[MIT](LICENSE)
