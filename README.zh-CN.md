@@ -4,6 +4,8 @@ FaultReplay Agent 反复回放事件日志，缩减出仍能触发同一断言�
 
 [English](README.md) · MIT
 
+![15 条采集记录缩减成仍然能复现走廊灯故障的 3 条 motion 事件](docs/reduction.png)
+
 ```sh
 python -m pip install -e ".[test]"
 faultreplay demo

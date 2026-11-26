@@ -4,6 +4,8 @@ FaultReplay Agent replays an event log against a target assertion, shrinks it to
 
 [简体中文](README.zh-CN.md) · MIT
 
+![15 captured records reduced to the 3 motion events that still reproduce the corridor light fault](docs/reduction.png)
+
 ```sh
 python -m pip install -e ".[test]"
 faultreplay demo
