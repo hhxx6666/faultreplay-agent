@@ -1,6 +1,6 @@
 # FaultReplay Agent v0.1
 
-FaultReplay Agent 反复回放事件日志，缩减出仍能触发同一断言的输入序列，并导出 pytest 回归测试。
+FaultReplay Agent 在回放预算内缩减事件日志，保留能触发同一断言失败的输入序列，并导出 pytest 回归测试。
 
 [English](README.md) · MIT
 
@@ -75,7 +75,9 @@ faultreplay reduce --events events.jsonl --initial-state initial_state.json --as
 
 `--max-replays` 默认是 100，包含基线、候选和最终复核的实际运行次数。基线和每个候选各运行两次，并比较输出事件的时间、类型与内容。候选必须正常结束并稳定违反目标断言。异常或观测不一致的候选记为无法判定。基线无法稳定复现时，报告原始观测并结束。每轮删减前预留两次回放，用于复核最终选中的序列。
 
-预算不足时，`report.md` 列出已验证的最短序列和尚待检查的删除批次。报告还会标出回放无法判定的批次。只有对当前序列的每一种单事件删除都得到稳定结果且目标断言均未失败，报告才会显示 `Single-deletion verified: yes`（逐条删除已验证）。
+预算不足时，`report.md` 列出本轮找到且验证过的最短序列，以及尚待检查的删除批次。报告还会标出回放无法判定的批次。只有对当前序列的每一种单事件删除都得到稳定结果且目标断言均未失败，报告才会显示 `Single-deletion verified: yes`（逐条删除已验证）。
+
+[独立 webhook 示例](examples/webhook-service/README.md) 可以复制到其他项目目录，演示应用、薄适配器与导出的 pytest 如何配合。
 
 ## 开发验证
 

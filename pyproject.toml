@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "faultreplay-agent"
 version = "0.1.0"
-description = "Reduce event logs into replayable pytest regressions"
+description = "Turn event logs into pytest regressions with budgeted replay reduction"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

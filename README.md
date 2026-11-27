@@ -1,6 +1,6 @@
 # FaultReplay Agent v0.1
 
-FaultReplay Agent replays an event log against a target assertion, shrinks it to the smallest input sequence that still trips the same failure, and exports a pytest regression test for it.
+FaultReplay Agent replays an event log against a target assertion, reduces it within a replay budget while preserving the same failure, and exports a pytest regression test.
 
 [简体中文](README.zh-CN.md) · MIT
 
@@ -43,6 +43,8 @@ To move the generated test into your own project, copy `original.jsonl`, `reduce
 
 ## Bring your own event log
 
+[Try the standalone webhook example](examples/webhook-service/README.md) to start with an application module outside the installed package and run the generated regression against its buggy and fixed versions.
+
 Each JSONL line carries a unique `id`, a non-negative integer `offset_ms`, an event `type` and an object `payload`. Write the log in ascending `offset_ms`; events sharing a timestamp run in file order. `direction` defaults to `input`. Mark past outputs with `"direction":"output"` so the report can show them. Every replay starts from a copy of the initial state at 0 ms, advances a virtual clock to each event's original offset and injects the input.
 
 ```jsonl
@@ -75,7 +77,7 @@ Add `--model my_app.model:suggest` to let a model propose removals. `suggest(sys
 
 `--max-replays` defaults to 100 and counts every actual replay: baseline, candidates and final verification. The baseline and each candidate run twice, comparing timing, type and content of the emitted events. A candidate must finish cleanly and violate the target assertion consistently; one that raises or disagrees between runs is marked undetermined. If the baseline does not reproduce reliably, the report records the original observation and stops. Two replays are reserved before each reduction round to re-verify the sequence finally chosen.
 
-When the budget runs out, `report.md` lists the shortest verified sequence and the deletion batches still unchecked, and flags any batch whose replays were undetermined. The report only says `Single-deletion verified: yes` when every single-event deletion of the current sequence produced a stable result without the target assertion failing.
+When the budget runs out, `report.md` lists the shortest sequence found and verified in that run and the deletion batches still unchecked, and flags any batch whose replays were undetermined. The report only says `Single-deletion verified: yes` when every single-event deletion of the current sequence produced a stable result without the target assertion failing.
 
 ## Development
 
