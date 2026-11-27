@@ -17,3 +17,12 @@ jobs:
       - run: python -m pytest -q
       - run: faultreplay demo
       - run: python -m pytest -q faultreplay-output/test_regression.py
+      - name: Replay the webhook example from outside the checkout
+        run: |
+          cp -r examples/webhook-service "$RUNNER_TEMP/webhook-service"
+          cd "$RUNNER_TEMP/webhook-service"
+          python -m faultreplay reduce --events events.jsonl --initial-state state.json --assertions assertions.json --simulator webhook_adapter:BUGGY --regression-simulator webhook_adapter:FIXED --output replay-result
+          python -m pytest -q replay-result/test_regression.py
+          status=0
+          python -m pytest -q replay-result/test_regression.py -p faultreplay.pytest_plugin --faultreplay-simulator webhook_adapter:BUGGY || status=$?
+          test "$status" -eq 1

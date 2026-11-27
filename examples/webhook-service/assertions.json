@@ -1,0 +1,6 @@
+{
+  "target_assertion_id": "webhook.enqueue_once",
+  "assertions": [
+    {"id":"webhook.enqueue_once","output_type":"job.enqueue","window_ms":[0,300],"max_count":1}
+  ]
+}
